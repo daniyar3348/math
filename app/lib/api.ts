@@ -8,7 +8,16 @@ export class ApiError extends Error {
   }
 }
 
+// В демо-сборке (GitHub Pages, NEXT_PUBLIC_DEMO=1) все вызовы уходят в
+// браузерный демо-бэкенд (lib/demo.ts) вместо сети. В обычной сборке эта
+// ветка вырезается бандлером (env инлайнится) — demo-код в бандл не попадает.
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  if (IS_DEMO) {
+    const { demoFetch } = await import("./demo");
+    return demoFetch(path, init) as Promise<T>;
+  }
   const res = await fetch(path, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },

@@ -62,7 +62,15 @@ npm run dev      # http://localhost:3000
 - **Вопросы**: двуязычный текст, 2–6 вариантов, отметка правильного, разбор
 - Ученики и платежи: таблицы
 
-## Продакшен-деплой
+## Деплой в один клик — Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/daniyar3348/math)
+
+Blueprint в [`render.yaml`](../render.yaml): полная версия (сервер+БД+админка),
+автодеплой на каждый пуш. Пошагово и про тарифы/постоянный диск —
+**[DEPLOY_RENDER.md](DEPLOY_RENDER.md)**.
+
+## Продакшен-деплой (свой VPS)
 
 Готовый пакет: `Dockerfile` (standalone-образ) + `docker-compose.prod.yml` (app + Caddy
 с авто-HTTPS) + `deploy/backup.sh` (ночные бэкапы SQLite) — пошагово в **[DEPLOY_VPS.md](DEPLOY_VPS.md)**.

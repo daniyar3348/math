@@ -1,7 +1,8 @@
 // Seed content: math prep for БИЛ / НИШ / КТЛ.
 // Bilingual (kk/ru). All answers verified.
-// SERVER-ONLY: imported by lib/db.ts to seed the database on first run.
-// Client components must use lib/types.ts + the API instead.
+// Used by: lib/db.ts (сид БД при первом запуске) и lib/demo.ts (демо-режим
+// GitHub Pages — контент работает прямо в браузере).
+// Обычные клиентские компоненты используют lib/types.ts + API.
 
 import type { LocalizedText, SchoolId } from "./types";
 

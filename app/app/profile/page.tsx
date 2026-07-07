@@ -20,6 +20,8 @@ function SecurityCard() {
   const [totpMsg, setTotpMsg] = useState("");
 
   if (!me) return null;
+  // В демо-сборке (GitHub Pages) серверные функции безопасности скрыты.
+  if (process.env.NEXT_PUBLIC_DEMO === "1") return null;
 
   const changePw = async (e: React.FormEvent) => {
     e.preventDefault();
