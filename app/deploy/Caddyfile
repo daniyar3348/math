@@ -1,0 +1,9 @@
+# Caddy сам получает и продлевает HTTPS-сертификат для {$DOMAIN} (Let's Encrypt).
+{$DOMAIN} {
+	encode gzip
+	# Защита от гигантских запросов (импорт вопросов ≤ 2 MB, остальное меньше)
+	request_body {
+		max_size 4MB
+	}
+	reverse_proxy app:3000
+}

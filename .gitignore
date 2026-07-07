@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+.next/
+# SQLite DB и бэкапы — хэши паролей, НИКОГДА не коммитить
+data/
+backups/
+.env
+.env.local
+.claude/
+*.log
