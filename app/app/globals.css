@@ -12,13 +12,14 @@
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
-  --font-sans: var(--font-geist-sans);
+  /* Системный стек вместо Google Fonts: сборка не зависит от сети (CI/Koyeb) */
+  --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, Arial, sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* Reusable component classes (no custom-class chaining — Tailwind v4 @apply

@@ -62,13 +62,13 @@ npm run dev      # http://localhost:3000
 - **Вопросы**: двуязычный текст, 2–6 вариантов, отметка правильного, разбор
 - Ученики и платежи: таблицы
 
-## Деплой в один клик — Render
+## Хостинг — три готовых пути
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/daniyar3348/math)
-
-Blueprint в [`render.yaml`](../render.yaml): полная версия (сервер+БД+админка),
-автодеплой на каждый пуш. Пошагово и про тарифы/постоянный диск —
-**[DEPLOY_RENDER.md](DEPLOY_RENDER.md)**.
+| Вариант | БД | Стоимость | Инструкция |
+|---------|-----|-----------|------------|
+| **Koyeb** (текущий) | эфемерная на free | бесплатно, без карты | **[DEPLOY_KOYEB.md](DEPLOY_KOYEB.md)** — корневой `Dockerfile` |
+| Render | эфемерная на free; постоянная на Starter+disk | $0 / $7+мес | [DEPLOY_RENDER.md](DEPLOY_RENDER.md) + [`render.yaml`](../render.yaml) |
+| Свой VPS | постоянная | ~3–7 тыс ₸/мес | [DEPLOY_VPS.md](DEPLOY_VPS.md) — Docker+Caddy+бэкапы |
 
 ## Продакшен-деплой (свой VPS)
 
