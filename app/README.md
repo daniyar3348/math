@@ -66,7 +66,7 @@ npm run dev      # http://localhost:3000
 
 | Вариант | БД | Стоимость | Инструкция |
 |---------|-----|-----------|------------|
-| **Koyeb** (текущий) | эфемерная на free | бесплатно, без карты | **[DEPLOY_KOYEB.md](DEPLOY_KOYEB.md)** — корневой `Dockerfile` |
+| **Koyeb** (текущий) | эфемерная на free | бесплатно, без карты | [DEPLOY_KOYEB.md](DEPLOY_KOYEB.md)|
 | Render | эфемерная на free; постоянная на Starter+disk | $0 / $7+мес | [DEPLOY_RENDER.md](DEPLOY_RENDER.md) + [`render.yaml`](../render.yaml) |
 | Свой VPS | постоянная | ~3–7 тыс ₸/мес | [DEPLOY_VPS.md](DEPLOY_VPS.md) — Docker+Caddy+бэкапы |
 
