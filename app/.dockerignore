@@ -1,8 +1,0 @@
-node_modules
-.next
-data
-backups
-.git
-.claude
-*.log
-.env
