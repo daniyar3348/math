@@ -8,7 +8,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function create() {
-  const url = new URL(process.env.DATABASE_URL!);
+  // Фолбэк — только чтобы импорт модуля не падал при сборке без .env
+  // (docker build/CI): соединение в этот момент не открывается. В рантайме
+  // env обязателен и задаётся окружением.
+  const url = new URL(process.env.DATABASE_URL ?? "postgresql://localhost:5433/bilimhub");
   const schema = url.searchParams.get("schema") ?? undefined;
   url.searchParams.delete("schema");
   const adapter = new PrismaPg({ connectionString: url.toString() }, schema ? { schema } : undefined);

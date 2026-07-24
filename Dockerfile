@@ -12,10 +12,10 @@ RUN pnpm build
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-RUN corepack enable
 COPY --from=build /app ./
 RUN mkdir -p /app/uploads && chown -R node:node /app/uploads /app/.next
 USER node
 EXPOSE 3000
+# Прямые бинарники вместо pnpm: старт контейнера не зависит от corepack/сети.
 # Миграции недеструктивны (migrate deploy); сид в production не выполняется.
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && pnpm start"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && ./node_modules/.bin/next start"]

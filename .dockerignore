@@ -1,6 +1,7 @@
 node_modules
 .next
 .git
+lib/generated
 test-results
 playwright-report
 uploads

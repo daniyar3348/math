@@ -1,6 +1,6 @@
 # Progress — BilimHub
 
-**Last updated:** 2026-07-24 14:05
+**Last updated:** 2026-07-24 14:45
 
 ## Current Task
 ЗАВЕРШЕНО — все фазы P0–P5 выполнены, критерии §21 закрыты.
@@ -48,6 +48,10 @@
 Сид-аккаунты: admin/teacher/parent@bilimhub.local (Bilim2026!), ученик +77000000001 (OTP).
 
 ## Notes for Resume
+- Docker-образ собран и проверен целиком (compose --profile app): migrate deploy на старте,
+  next start в production-режиме, CSP/логин админа/казахский SSR подтверждены curl'ом
+  и в браузере; найден и исправлен env-less build (фолбэк DATABASE_URL в lib/db.ts),
+  CMD переведён на прямые бинарники (без corepack в рантайме), packageManager закреплён.
 - Dev-БД пересоздана 2026-07-24 (схема public была затёрта интеграционными
   тестами до фикса изоляции) — восстановлена migrate deploy + db:seed.
 - Тестовая изоляция: DATABASE_URL_TEST `?schema=test` теперь честно работает
