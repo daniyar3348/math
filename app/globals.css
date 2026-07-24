@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* ——— Дизайн-токены (§15). Цвета переопределяются из SiteSettings
+   инлайн-переменными в layout — бренд настраивается без кода. ——— */
+:root {
+  --background: #faf9fc;
+  --foreground: #1c1630;
+  --primary: #6d28d9;        /* фиолетовый — основной бренд */
+  --primary-dark: #5b21b6;
+  --primary-soft: #ede9fe;
+  --accent: #f59e0b;         /* жёлтый — акцент */
+  --accent-soft: #fef3c7;
+  --radius: 0.9rem;
+  --shadow-card: 0 1px 3px rgb(28 22 48 / 0.07), 0 4px 14px rgb(28 22 48 / 0.05);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Видимый фокус — доступность (§15) */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ——— Композиты (без цепочек кастомных классов — ограничение Tailwind v4) ——— */
+.btn-primary,
+.btn-accent,
+.btn-outline {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+}
+.btn-primary {
+  @apply text-white shadow-sm;
+  background: var(--primary);
+}
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-accent {
+  @apply text-amber-950 shadow-sm;
+  background: var(--accent);
+}
+.btn-accent:hover { filter: brightness(0.95); }
+.btn-outline {
+  @apply border border-slate-300 bg-white text-slate-700;
+}
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.btn-ghost {
+  @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100;
+}
+.card {
+  @apply rounded-2xl border border-slate-200 bg-white;
+  box-shadow: var(--shadow-card);
+}
+.chip {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+}
+.input {
+  @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition;
+}
+.input:focus { border-color: var(--primary); }
+.label {
+  @apply mb-1 block text-sm font-semibold text-slate-700;
+}
+.container-app {
+  @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+}
+.skeleton {
+  @apply animate-pulse rounded-xl bg-slate-200/80;
+}
+.prose-md :is(h1,h2,h3) { @apply mt-5 mb-2 font-bold text-slate-900; }
+.prose-md h1 { @apply text-2xl; }
+.prose-md h2 { @apply text-xl; }
+.prose-md h3 { @apply text-lg; }
+.prose-md p { @apply my-3 leading-relaxed text-slate-700; }
+.prose-md ul, .prose-md ol { @apply my-3 pl-6 text-slate-700; }
+.prose-md ul { @apply list-disc; }
+.prose-md ol { @apply list-decimal; }
+.prose-md li { @apply my-1; }
+.prose-md strong { @apply font-bold text-slate-900; }
+.prose-md code { @apply rounded bg-slate-100 px-1.5 py-0.5 text-sm; }
+
+/* skip-link */
+.skip-link {
+  @apply absolute left-2 top-2 z-[100] -translate-y-20 rounded-lg bg-white px-4 py-2 text-sm font-bold shadow transition;
+}
+.skip-link:focus { transform: translateY(0); }

@@ -1,0 +1,17 @@
+allowBuilds:
+  "@prisma/engines": true
+  "@prisma/client": true
+  argon2: true
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
+onlyBuiltDependencies:
+  - argon2
+  - sharp
+  - unrs-resolver
+  - prisma
+  - "@prisma/client"
+  - "@prisma/engines"
+  - esbuild
+verifyDepsBeforeRun: false

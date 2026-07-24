@@ -1,0 +1,37 @@
+# BilimHub — локальная инфраструктура.
+#   docker compose up -d          # только БД (по умолчанию)
+#   docker compose --profile app up -d --build   # БД + приложение (production-режим)
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bilimhub
+      POSTGRES_PASSWORD: bilimhub_dev # локальная разработка; в production задать свой
+      POSTGRES_DB: bilimhub
+    ports:
+      - "5433:5432" # 5433 наружу, чтобы не конфликтовать с локальным postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bilimhub"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    profiles: ["app"]
+    build: .
+    restart: unless-stopped
+    env_file: .env.docker
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  uploads:

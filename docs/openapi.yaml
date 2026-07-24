@@ -1,0 +1,294 @@
+openapi: 3.1.0
+info:
+  title: BilimHub API
+  version: 1.0.0
+  description: |
+    REST API платформы. Аутентификация — httpOnly cookies (`bh_access` 15 мин,
+    `bh_refresh` 30 дней с ротацией). Мутации требуют совпадения Origin.
+    Ошибки — единый формат `{"error": "<code>", "details?": [...]}`
+    со статусами 400/401/403/404/409/429.
+    Админ-CRUD (`/api/admin/{resource}`) — обобщённый контракт списков:
+    `?q&page&pageSize&sort&dir&status&f_<field>` → `{rows, total, page, pageSize}`.
+servers:
+  - url: http://localhost:3000
+tags: [auth, tests, attempts, challenges, courses, payments, admin]
+paths:
+  /api/auth/otp/request:
+    post:
+      tags: [auth]
+      summary: Запросить одноразовый код (ученик)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties: { phone: { type: string, example: "+77001234567" } }
+      responses:
+        "200":
+          description: Код отправлен; в dev дополнительно возвращается devCode
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  newUser: { type: boolean }
+                  devCode: { type: string, description: только вне production }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/auth/otp/verify:
+    post:
+      tags: [auth]
+      summary: Подтвердить код, создать сессию (и профиль для нового ученика)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string }
+                firstName: { type: string }
+                lastName: { type: string }
+      responses:
+        "200": { description: Сессия создана (Set-Cookie) }
+        "400": { $ref: "#/components/responses/Error" }
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Вход персонала/родителя (email+пароль, опционально TOTP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+                totp: { type: string }
+      responses:
+        "200":
+          description: Сессия создана; возвращает роли
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles: { type: array, items: { type: string } }
+        "401": { description: Неверные данные либо `{"totpRequired":true}` }
+  /api/auth/logout: { post: { tags: [auth], summary: Выход (текущая сессия), responses: { "200": { description: ok } } } }
+  /api/auth/logout-all: { post: { tags: [auth], summary: Завершить все сессии пользователя, responses: { "200": { description: ok } } } }
+  /api/auth/me: { get: { tags: [auth], summary: Текущий пользователь, responses: { "200": { description: "{user}" }, "401": { $ref: "#/components/responses/Error" } } } }
+
+  /api/tests/{slug}:
+    get:
+      tags: [tests]
+      summary: Публичная карточка теста
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Тест без правильных ответов }, "404": { $ref: "#/components/responses/Error" } }
+  /api/tests/{slug}/start:
+    post:
+      tags: [tests]
+      summary: Начать/продолжить попытку
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accessCode: { type: string }
+                challengeSlug: { type: string }
+                preview: { type: boolean, description: только персонал; вне аналитики }
+      responses:
+        "200":
+          description: id попытки
+          content: { application/json: { schema: { type: object, properties: { attemptId: { type: string } } } } }
+        "409": { description: attempts_exhausted / challenge_not_active / empty_test }
+
+  /api/attempts/{id}:
+    get:
+      tags: [attempts]
+      summary: Состояние попытки (раскладка без правильных ответов, серверный дедлайн)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: attempt + items }, "404": { $ref: "#/components/responses/Error" } }
+  /api/attempts/{id}/answer:
+    put:
+      tags: [attempts]
+      summary: Автосохранение ответа (+история; отклоняется после дедлайна)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [questionId]
+              properties:
+                questionId: { type: string }
+                response: { description: формат зависит от типа вопроса }
+                flagged: { type: boolean }
+      responses: { "200": { description: ok }, "409": { description: attempt_finished / time_over } }
+  /api/attempts/{id}/finish:
+    post:
+      tags: [attempts]
+      summary: Завершить попытку (транзакционно, идемпотентно)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Статус SUBMITTED (есть ручная проверка) или GRADED } }
+  /api/attempts/{id}/result:
+    get:
+      tags: [attempts]
+      summary: Результат с учётом политик показа (+диагностика для DIAGNOSTIC)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Итог, разбор, правильные ответы — только когда разрешено } }
+
+  /api/challenges:
+    get:
+      tags: [challenges]
+      summary: Каталог челленджей
+      parameters:
+        - { name: status, in: query, schema: { enum: [planned, active, finished] } }
+        - { name: price, in: query, schema: { enum: [free, paid] } }
+        - { name: subject, in: query, schema: { type: string } }
+        - { name: grade, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses: { "200": { description: "{rows,total,page,pageSize}" } }
+  /api/challenges/{slug}/join:
+    post:
+      tags: [challenges]
+      summary: Записаться (окно регистрации, лимит, код, оплата)
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { accessCode: { type: string } } } } } }
+      responses: { "200": { description: ok }, "402": { description: требуется оплата }, "409": { $ref: "#/components/responses/Error" } }
+  /api/challenges/{slug}/leaderboard:
+    get:
+      tags: [challenges]
+      summary: Рейтинг (tie-break — баллы ↓, финиш ↑, запись ↑; opt-out маскируется)
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: rows } }
+
+  /api/courses/{slug}/enroll:
+    post:
+      tags: [courses]
+      summary: Самозапись на открытый курс (платный — через платёж)
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: ok }, "402": { description: требуется оплата } }
+  /api/courses/{slug}/gradebook:
+    get:
+      tags: [courses]
+      summary: Журнал оценок курса (персонал; ?format=csv)
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: format, in: query, schema: { enum: [json, csv] } }
+      responses: { "200": { description: json или text/csv } }
+
+  /api/payments:
+    post:
+      tags: [payments]
+      summary: Создать платёж (цена всегда из БД)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refType, refId]
+              properties:
+                refType: { enum: [COURSE, CHALLENGE, TEST] }
+                refId: { type: string }
+      responses:
+        "200": { description: "{paymentId, redirectUrl}" }
+        "409": { description: already_paid }
+  /api/payments/webhook:
+    post:
+      tags: [payments]
+      summary: Идемпотентный webhook провайдера (HMAC-подпись)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paymentId, status, signature]
+              properties:
+                paymentId: { type: string }
+                status: { enum: [PAID, FAILED, REFUNDED] }
+                providerTxnId: { type: string }
+                signature: { type: string }
+      responses: { "200": { description: "{applied: boolean} — повтор безопасен" }, "403": { description: bad signature } }
+
+  /api/review/queue:
+    get:
+      tags: [admin]
+      summary: Очередь ручной проверки (преподаватель — свои курсы)
+      responses: { "200": { description: rows }, "403": { $ref: "#/components/responses/Error" } }
+  /api/review/{id}:
+    post:
+      tags: [admin]
+      summary: Выставить оценку за эссе/файл (clamp по баллам вопроса)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [score, comment]
+              properties: { score: { type: number }, comment: { type: string } }
+      responses: { "200": { description: ok; при закрытии последнего PENDING попытка становится GRADED } }
+
+  /api/admin/{resource}:
+    get:
+      tags: [admin]
+      summary: Обобщённый список (whitelist ресурсов, см. lib/admin-resources.ts)
+      parameters:
+        - { name: resource, in: path, required: true, schema: { type: string } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string } }
+        - { name: dir, in: query, schema: { enum: [asc, desc] } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: pageSize, in: query, schema: { type: integer, maximum: 100 } }
+      responses: { "200": { description: "{rows,total,page,pageSize}" }, "403": { $ref: "#/components/responses/Error" } }
+    post:
+      tags: [admin]
+      summary: Создать запись ресурса (строгая zod-схема ресурса)
+      responses: { "200": { description: "{row}" } }
+  /api/admin/status:
+    post:
+      tags: [admin]
+      summary: Смена статуса контента (workflow + i18n-гейт публикации)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entity, id, status]
+              properties:
+                entity: { enum: [question, test, challenge, course, lesson] }
+                id: { type: string }
+                status: { enum: [DRAFT, REVIEW, PUBLISHED, ARCHIVED] }
+      responses:
+        "200": { description: ok }
+        "409": { description: i18n_incomplete / test_without_questions / challenge_without_activities }
+components:
+  responses:
+    Error:
+      description: Ошибка в едином формате
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: { error: { type: string } }
+    RateLimited:
+      description: Превышен лимит запросов
+      content:
+        application/json:
+          schema: { type: object, properties: { error: { const: rate_limited } } }
